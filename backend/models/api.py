@@ -145,3 +145,10 @@ class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None
     incident_id: Optional[str] = None
+
+
+class OSINTResponse(BaseModel):
+    """Response model for asynchronous OSINT enrichment."""
+    status: str
+    evidence: list[dict] = Field(default_factory=list)
+    raw: dict = Field(default_factory=dict)

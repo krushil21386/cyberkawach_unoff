@@ -48,6 +48,22 @@ const API = {
     },
 
     /**
+     * POST /api/incidents/{id}/osint — fetch asynchronous OSINT enrichment.
+     */
+    async getIncidentOsint(incidentId) {
+        const response = await fetch(`${API_BASE}/api/incidents/${incidentId}/osint`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+        });
+
+        if (!response.ok) {
+            return null;
+        }
+
+        return response.json();
+    },
+
+    /**
      * GET /api/health — check system status.
      */
     async health() {

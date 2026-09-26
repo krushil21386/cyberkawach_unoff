@@ -150,6 +150,20 @@
 
             currentResult = result;
             renderResults(result);
+
+            // Asynchronously fetch OSINT enrichment without blocking main analysis display
+            if (result.incident_id) {
+                API.getIncidentOsint(result.incident_id).then(osintData => {
+                    if (osintData && osintData.status !== 'disabled' && osintData.evidence && osintData.evidence.length > 0) {
+                        currentResult.evidence = (currentResult.evidence || []).concat(osintData.evidence);
+                        evidenceCount.textContent = currentResult.evidence.length;
+                        evidenceList.innerHTML = currentResult.evidence
+                            .sort((a, b) => (b.confidence || 0) - (a.confidence || 0))
+                            .map(item => Components.evidenceItem(item))
+                            .join('');
+                    }
+                }).catch(() => {});
+            }
         } catch (err) {
             alert(`Analysis failed: ${err.message}\n\nMake sure the backend is running on port 8000.`);
         } finally {

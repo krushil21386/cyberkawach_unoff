@@ -22,12 +22,15 @@ const Components = {
      */
     evidenceItem(item) {
         const confidencePercent = Math.round((item.confidence || 0) * 100);
+        const description = item.description || item.finding || '';
+        const type = item.type || item.module || 'osint';
+        const source = item.source || item.module || 'OSINT';
         return `
             <div class="evidence-item">
-                <div class="evidence-type-indicator" data-type="${this.escapeHtml(item.type)}"></div>
+                <div class="evidence-type-indicator" data-type="${this.escapeHtml(type)}"></div>
                 <div class="evidence-body">
-                    <div class="evidence-source">${this.escapeHtml(item.source)}</div>
-                    <div class="evidence-description">${this.escapeHtml(item.description)}</div>
+                    <div class="evidence-source">${this.escapeHtml(source)}</div>
+                    <div class="evidence-description">${this.escapeHtml(description)}</div>
                 </div>
                 <div class="evidence-confidence">${confidencePercent}%</div>
             </div>

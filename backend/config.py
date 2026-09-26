@@ -46,6 +46,9 @@ class Settings(BaseSettings):
     max_message_length: int = 10000
     max_urls_per_message: int = 20
 
+    # ─── OSINT Enrichment ───
+    osint_enabled: bool = True
+
     model_config = {"env_file": ".env", "env_file_encoding": "utf-8"}
 
     @property
@@ -68,6 +71,7 @@ class Settings(BaseSettings):
             # P2 optional threat-intel
             "abuseipdb": bool(self.abuseipdb_api_key and self.abuseipdb_api_key.strip()),
             "urlhaus": True,  # No key needed
+            "osint": bool(self.osint_enabled),
         }
 
 
