@@ -16,9 +16,17 @@
         <div class="header-inner">
             <div class="header-brand">
                 <svg class="header-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <h1 class="header-title">Cyber Fraud Guardian</h1>
+                <h1 class="header-title" data-i18n="title">Cyber Fraud Guardian</h1>
             </div>
-            <div class="header-meta">
+            <div class="header-meta" style="display: flex; align-items: center; gap: 10px;">
+                <div class="lang-selector">
+                    <select id="lang-select" class="lang-select" aria-label="Select Language">
+                        <option value="en">🇬🇧 English</option>
+                        <option value="hi">🇮🇳 हिंदी (Hindi)</option>
+                        <option value="gu">🇮🇳 ગુજરાતી (Gujarati)</option>
+                        <option value="ta">🇮🇳 தமிழ் (Tamil)</option>
+                    </select>
+                </div>
                 <span class="header-badge" id="health-status">Checking...</span>
             </div>
         </div>
@@ -29,18 +37,26 @@
         <section class="panel input-panel" id="input-panel">
             <h2 class="panel-title">
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                Analyze Message
+                <span data-i18n="panelTitle">Analyze Message</span>
             </h2>
 
             <form id="analyze-form">
                 <div class="form-group">
-                    <label for="message-input" class="form-label">Paste suspicious message</label>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.35rem;">
+                        <label for="message-input" class="form-label" style="margin-bottom: 0;" data-i18n="messageLabel">Paste suspicious message</label>
+                        <label for="screenshot-upload" class="btn btn--ghost" style="padding: 2px 8px; font-size: 0.75rem; cursor: pointer; display: inline-flex; align-items: center; gap: 4px;">
+                            <svg class="icon" style="width: 14px; height: 14px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="M21 15l-5-5L5 21"/></svg>
+                            <span data-i18n="uploadScreenshot">Upload Screenshot (OCR)</span>
+                        </label>
+                        <input type="file" id="screenshot-upload" accept="image/png,image/jpeg,image/webp" style="display: none;">
+                    </div>
+                    <div id="upload-status" style="font-size: 0.75rem; color: var(--color-primary); margin-bottom: 0.35rem;" hidden></div>
                     <textarea id="message-input" class="form-textarea" rows="6" placeholder="Paste the suspicious SMS, email, or chat message here..." required></textarea>
                 </div>
 
                 <div class="form-row">
                     <div class="form-group form-group--half">
-                        <label for="input-type" class="form-label">Message type</label>
+                        <label for="input-type" class="form-label" data-i18n="messageType">Message type</label>
                         <select id="input-type" class="form-select">
                             <option value="text">Text</option>
                             <option value="sms">SMS</option>
@@ -49,7 +65,7 @@
                         </select>
                     </div>
                     <div class="form-group form-group--half">
-                        <label for="user-state" class="form-label">Your situation</label>
+                        <label for="user-state" class="form-label" data-i18n="situation">Your situation</label>
                         <select id="user-state" class="form-select">
                             <option value="received">I only received this message</option>
                             <option value="clicked">I clicked a link in it</option>
@@ -60,16 +76,16 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="urls-input" class="form-label">Additional URLs (optional, one per line)</label>
+                    <label for="urls-input" class="form-label" data-i18n="urlsLabel">Additional URLs (optional, one per line)</label>
                     <textarea id="urls-input" class="form-textarea form-textarea--small" rows="2" placeholder="https://suspicious-link.example.com"></textarea>
                 </div>
 
                 <div class="form-actions">
                     <button type="submit" class="btn btn--primary" id="analyze-btn">
                         <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                        Analyze Message
+                        <span data-i18n="analyzeBtn">Analyze Message</span>
                     </button>
-                    <button type="button" class="btn btn--ghost" id="sample-btn">Load Sample</button>
+                    <button type="button" class="btn btn--ghost" id="sample-btn" data-i18n="loadSampleBtn">Load Sample</button>
                 </div>
             </form>
 
@@ -82,7 +98,7 @@
         <!-- ─── Loading ─── -->
         <div class="loading" id="loading" hidden>
             <div class="loading-spinner"></div>
-            <p class="loading-text">Analyzing message through detection pipeline...</p>
+            <p class="loading-text" data-i18n="analyzingText">Analyzing message through detection pipeline...</p>
             <div class="loading-stages" id="loading-stages"></div>
         </div>
 
@@ -105,7 +121,7 @@
             <section class="panel" id="explanation-panel">
                 <h2 class="panel-title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
-                    Explanation
+                    <span data-i18n="explanationTitle">Explanation</span>
                     <span class="badge badge--subtle" id="explanation-source"></span>
                 </h2>
                 <div id="explanation-content"></div>
@@ -115,7 +131,7 @@
             <section class="panel" id="evidence-panel">
                 <h2 class="panel-title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14,2 14,8 20,8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                    Evidence Items
+                    <span data-i18n="evidenceTitle">Evidence Items</span>
                     <span class="badge" id="evidence-count">0</span>
                 </h2>
                 <div class="evidence-list" id="evidence-list"></div>
@@ -125,7 +141,7 @@
             <section class="panel" id="threat-intel-panel">
                 <h2 class="panel-title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    Threat Intelligence
+                    <span data-i18n="threatIntelTitle">Threat Intelligence</span>
                 </h2>
                 <div class="threat-intel-list" id="threat-intel-list"></div>
             </section>
@@ -134,7 +150,7 @@
             <section class="panel" id="url-panel" hidden>
                 <h2 class="panel-title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
-                    URL Analysis
+                    <span data-i18n="urlAnalysisTitle">URL Analysis</span>
                 </h2>
                 <div id="url-list"></div>
             </section>
@@ -143,18 +159,18 @@
             <section class="panel" id="response-panel">
                 <h2 class="panel-title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22,4 12,14.01 9,11.01"/></svg>
-                    What You Should Do
+                    <span data-i18n="responseTitle">What You Should Do</span>
                 </h2>
                 <div id="response-content"></div>
 
                 <!-- State switcher for demo -->
                 <div class="state-switcher" id="state-switcher">
-                    <label class="form-label">Change your situation (demo):</label>
+                    <label class="form-label" data-i18n="stateSwitcherLabel">Change your situation (demo):</label>
                     <div class="state-buttons" id="state-buttons">
-                        <button class="btn btn--small" data-state="received">Only Received</button>
-                        <button class="btn btn--small" data-state="clicked">Clicked Link</button>
-                        <button class="btn btn--small" data-state="entered_credentials">Entered Details</button>
-                        <button class="btn btn--small" data-state="paid">Made Payment</button>
+                        <button class="btn btn--small" data-state="received" data-i18n="btnReceived">Only Received</button>
+                        <button class="btn btn--small" data-state="clicked" data-i18n="btnClicked">Clicked Link</button>
+                        <button class="btn btn--small" data-state="entered_credentials" data-i18n="btnEntered">Entered Details</button>
+                        <button class="btn btn--small" data-state="paid" data-i18n="btnPaid">Made Payment</button>
                     </div>
                 </div>
             </section>
@@ -163,7 +179,7 @@
             <section class="panel" id="attack-path-panel" hidden>
                 <h2 class="panel-title">
                     <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22,12 18,12 15,21 9,3 6,12 2,12"/></svg>
-                    Attack Path
+                    <span data-i18n="attackPathTitle">Attack Path</span>
                 </h2>
                 <div id="attack-path-content"></div>
             </section>
@@ -178,11 +194,12 @@
     </main>
 
     <footer class="footer">
-        <p>Cyber Fraud Guardian — Cyber Kavach Challenge 2026 · BSides Ahmedabad</p>
+        <p data-i18n="footer">Cyber Fraud Guardian — Cyber Kavach Challenge 2026 · BSides Ahmedabad</p>
     </footer>
 
     <script src="js/api.js"></script>
     <script src="js/components.js"></script>
+    <script src="js/i18n.js"></script>
     <script src="js/app.js"></script>
 </body>
 </html>

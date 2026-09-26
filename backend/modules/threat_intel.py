@@ -74,17 +74,21 @@ async def query_threat_intel(evidence: IncidentEvidence) -> IncidentEvidence:
         for result in pt_results:
             evidence.threat_intel.append(result)
             if result.match is True:
+                is_verified = "Verified" in (result.details or "")
+                confidence = 0.95 if is_verified else 0.85
                 evidence.evidence.append(EvidenceItem(
                     type=EvidenceType.THREAT_INTEL_HIT,
                     source="phishtank",
-                    description=f"PhishTank: URL confirmed as phishing — {result.details or 'verified phish'}",
-                    confidence=0.95,
+                    description=f"PhishTank: {result.details or 'URL confirmed as phishing threat'}",
+                    confidence=confidence,
                     raw_data={
                         "source": "phishtank",
                         "url": result.lookup_url,
                         "details": result.details,
                     },
                 ))
+                if not evidence.fraud_category or evidence.fraud_category == "unknown":
+                    evidence.fraud_category = "phishing"
             elif result.match is False:
                 evidence.evidence.append(EvidenceItem(
                     type=EvidenceType.THREAT_INTEL_MISS,

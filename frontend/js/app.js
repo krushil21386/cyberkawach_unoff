@@ -1,5 +1,6 @@
 /**
  * Main application logic — wires the UI to the API.
+ * Supports full website-wide language toggling in real-time.
  */
 
 (function () {
@@ -43,68 +44,48 @@
 
     // ─── State ───
     let currentResult = null;
-    let sampleMessages = [];
+
+    // Helper for translation lookup
+    const t = (k, def) => (window.I18N ? window.I18N.t(k, def) : def);
 
     // ─── Health check ───
     async function checkHealth() {
         try {
-            const health = await API.health();
-            healthStatus.textContent = 'System Online';
+            await API.health();
+            healthStatus.textContent = t('systemOnline', 'System Online');
             healthStatus.classList.remove('error');
         } catch (e) {
-            healthStatus.textContent = 'Backend Offline';
+            healthStatus.textContent = t('systemOffline', 'Backend Offline');
             healthStatus.classList.add('error');
         }
     }
 
-    // ─── Load sample messages ───
-    async function loadSamples() {
-        try {
-            const resp = await fetch('/../fixtures/sample_messages.json');
-            if (!resp.ok) {
-                // Try alternative path
-                const resp2 = await fetch('/fixtures/sample_messages.json');
-                if (resp2.ok) {
-                    sampleMessages = await resp2.json();
-                }
-            } else {
-                sampleMessages = await resp.json();
-            }
-        } catch (e) {
-            // Inline fallback samples
-            sampleMessages = [
-                {
-                    id: 'demo-banking',
-                    label: 'SBI KYC Scam (Banking)',
-                    input_type: 'sms',
-                    message: 'Dear Customer, Your SBI account has been BLOCKED due to incomplete KYC verification. Update your KYC immediately to avoid permanent account closure. Click here: https://sbi-kyc-update.xyz/verify?ref=8827361 or call 9876543210. Last date: 24 hours. -SBI Team',
-                },
-                {
-                    id: 'demo-courier',
-                    label: 'Fake Delivery (Courier)',
-                    input_type: 'sms',
-                    message: 'Your parcel from Amazon could not be delivered due to incorrect address. Please reschedule delivery by paying Rs. 25 customs charge: https://amaz0n-delivery.top/reschedule Track: AWB7839201. -Delhivery',
-                },
-                {
-                    id: 'demo-govt',
-                    label: 'Income Tax Refund (Government)',
-                    input_type: 'email',
-                    message: 'Subject: Income Tax Refund - Rs 18,500 Credited\n\nDear Taxpayer,\n\nYour income tax refund of Rs 18,500 has been approved. Due to outdated bank details, the refund could not be processed. Please update your bank account details within 48 hours to receive your refund:\n\nhttps://incometax-refund.click/update-bank\n\nFailure to update will result in cancellation of refund.\n\nRegards,\nIncome Tax Department, Govt. of India',
-                },
-                {
-                    id: 'demo-lottery',
-                    label: 'Lottery Prize Scam',
-                    input_type: 'chat',
-                    message: 'CONGRATULATIONS! You have WON Rs 25,00,000 in the Google Annual Lottery 2026! Your ticket number: GL-29384. To claim your prize, pay the processing fee of Rs 4,999 via Google Pay to merchant@gpay. Contact: lottery.winner2026@gmail.com. Hurry, offer expires in 12 hours!',
-                },
-            ];
-        }
-
-        // Render sample buttons
-        samplesList.innerHTML = sampleMessages
+    // ─── Render sample messages according to active language ───
+    function renderSamples() {
+        if (!samplesList || !window.I18N) return;
+        const currentSamples = I18N.getSamples();
+        samplesList.innerHTML = currentSamples
             .map(s => `<button type="button" class="sample-item" data-id="${Components.escapeHtml(s.id)}">${Components.escapeHtml(s.label)}</button>`)
             .join('');
     }
+
+    // ─── Language selector (i18n) ───
+    const langSelect = document.getElementById('lang-select');
+    if (langSelect && window.I18N) {
+        langSelect.value = I18N.currentLang;
+        langSelect.addEventListener('change', (e) => {
+            I18N.setLanguage(e.target.value);
+        });
+    }
+
+    // Re-render samples and active results when language changes
+    window.addEventListener('languageChanged', (e) => {
+        renderSamples();
+        if (currentResult) {
+            renderResults(currentResult);
+        }
+        checkHealth();
+    });
 
     // ─── Toggle samples dropdown ───
     sampleBtn.addEventListener('click', () => {
@@ -116,7 +97,8 @@
         const btn = e.target.closest('.sample-item');
         if (!btn) return;
 
-        const sample = sampleMessages.find(s => s.id === btn.dataset.id);
+        const currentSamples = I18N.getSamples();
+        const sample = currentSamples.find(s => s.id === btn.dataset.id);
         if (!sample) return;
 
         messageInput.value = sample.message;
@@ -124,6 +106,54 @@
         samplesDropdown.hidden = true;
         messageInput.focus();
     });
+
+    // ─── Screenshot OCR Upload ───
+    const screenshotInput = document.getElementById('screenshot-upload');
+    const uploadStatus = document.getElementById('upload-status');
+
+    if (screenshotInput) {
+        screenshotInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            uploadStatus.hidden = false;
+            uploadStatus.style.color = 'var(--color-primary, #3b82f6)';
+            const scanningTemplate = t('ocrScanning', 'Scanning {file} with OCR engine...');
+            uploadStatus.textContent = scanningTemplate.replace('{file}', file.name);
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                const resp = await fetch('/api/upload/screenshot', {
+                    method: 'POST',
+                    body: formData,
+                });
+
+                if (!resp.ok) {
+                    const err = await resp.json().catch(() => ({}));
+                    uploadStatus.style.color = '#ef4444';
+                    uploadStatus.textContent = `${t('ocrFail', 'Upload failed: ')}${err.detail || 'Error processing file'}`;
+                    return;
+                }
+
+                const res = await resp.json();
+                if (res.extracted_text) {
+                    messageInput.value = res.extracted_text;
+                    inputType.value = 'chat';
+                    uploadStatus.style.color = '#10b981';
+                    const successTemplate = t('ocrSuccess', "✓ Successfully extracted text from {file}. Review below and click 'Analyze Message'.");
+                    uploadStatus.textContent = successTemplate.replace('{file}', file.name);
+                } else {
+                    uploadStatus.style.color = 'var(--color-text-secondary)';
+                    uploadStatus.textContent = `✓ ${file.name} uploaded.`;
+                }
+            } catch (err) {
+                uploadStatus.style.color = '#ef4444';
+                uploadStatus.textContent = `${t('ocrFail', 'Upload failed: ')}${err.message}`;
+            }
+        });
+    }
 
     // ─── Form submission ───
     form.addEventListener('submit', async (e) => {
@@ -138,14 +168,16 @@
         loading.hidden = false;
         results.hidden = true;
         analyzeBtn.disabled = true;
-        analyzeBtn.textContent = 'Analyzing...';
+        analyzeBtn.textContent = t('analyzingBtn', 'Analyzing...');
 
         try {
+            const currentLang = window.I18N ? window.I18N.currentLang : 'en';
             const result = await API.analyze(
                 message,
                 inputType.value,
                 userState.value,
-                urls
+                urls,
+                currentLang
             );
 
             currentResult = result;
@@ -171,7 +203,7 @@
             analyzeBtn.disabled = false;
             analyzeBtn.innerHTML = `
                 <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-                Analyze Message
+                <span>${t('analyzeBtn', 'Analyze Message')}</span>
             `;
         }
     });
@@ -182,7 +214,7 @@
 
         // Risk banner
         const risk = Components.riskBanner(data.risk, data.fraud_category);
-        riskBanner.setAttribute('data-level', risk.level);
+        riskBanner.setAttribute('data-level', risk.rawLevel || risk.level);
         riskScore.textContent = risk.scorePercent;
         riskLevel.textContent = risk.level;
         riskCategory.textContent = risk.categoryLabel;
@@ -190,11 +222,12 @@
 
         // Explanation
         if (data.explanation) {
-            explanationSource.textContent = data.explanation.is_fallback ? 'Deterministic' : 'Gemini';
+            const sourceKey = data.explanation.is_fallback ? 'sourceDeterministic' : 'sourceGemini';
+            explanationSource.textContent = t(sourceKey, data.explanation.is_fallback ? 'Deterministic' : 'Gemini');
             explanationContent.innerHTML = Components.explanation(data.explanation);
         } else {
             explanationSource.textContent = '';
-            explanationContent.innerHTML = '<p style="color: var(--color-text-tertiary)">No explanation generated.</p>';
+            explanationContent.innerHTML = `<p style="color: var(--color-text-tertiary)">${t('noExplanation', 'No explanation available.')}</p>`;
         }
 
         // Evidence items
@@ -210,7 +243,7 @@
             .join('');
 
         if (!data.threat_intel?.length) {
-            threatIntelList.innerHTML = '<p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">No threat intelligence data (APIs may not be configured).</p>';
+            threatIntelList.innerHTML = `<p style="color: var(--color-text-tertiary); font-size: 0.8125rem;">${t('noThreatIntel', 'No threat intelligence data.')}</p>`;
         }
 
         // URLs
@@ -223,6 +256,14 @@
 
         // Adaptive response
         responseContent.innerHTML = Components.response(data.response);
+
+        // Fraud DNA Campaign card & Police Export Dossier
+        if (data.fraud_dna) {
+            responseContent.innerHTML += Components.fraudDna(data.fraud_dna);
+        }
+        if (data.incident_id) {
+            responseContent.innerHTML += Components.exportButton(data.incident_id);
+        }
 
         // Update state buttons
         const currentState = data.response?.user_state || 'received';
@@ -264,6 +305,13 @@
 
             // Re-render response section
             responseContent.innerHTML = Components.response(updated.response);
+            if (updated.fraud_dna) {
+                responseContent.innerHTML += Components.fraudDna(updated.fraud_dna);
+            }
+            if (updated.incident_id) {
+                responseContent.innerHTML += Components.exportButton(updated.incident_id);
+            }
+
             stateButtons.querySelectorAll('.btn').forEach(b => {
                 b.classList.toggle('active', b.dataset.state === newState);
             });
@@ -273,8 +321,11 @@
     });
 
     // ─── Initialize ───
+    if (window.I18N) {
+        I18N.applyTranslations();
+    }
+    renderSamples();
     checkHealth();
-    loadSamples();
 
     // Periodic health check
     setInterval(checkHealth, 30000);

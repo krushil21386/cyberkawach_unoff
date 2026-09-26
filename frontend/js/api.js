@@ -8,7 +8,8 @@ const API = {
     /**
      * POST /api/analyze — submit a message for analysis.
      */
-    async analyze(message, inputType, userState, urls) {
+    async analyze(message, inputType, userState, urls, language) {
+        const selectedLang = language || (window.I18N ? window.I18N.currentLang : 'en');
         const response = await fetch(`${API_BASE}/api/analyze`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -17,7 +18,7 @@ const API = {
                 input_type: inputType,
                 user_state: userState,
                 urls: urls.filter(u => u.trim()),
-                language: 'en',
+                language: selectedLang,
             }),
         });
 

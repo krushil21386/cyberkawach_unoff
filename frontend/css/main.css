@@ -148,6 +148,25 @@ body {
     color: var(--color-risk-high);
 }
 
+.lang-select {
+    padding: 5px 12px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: all var(--transition-fast);
+    box-shadow: var(--shadow-sm);
+}
+
+.lang-select:hover, .lang-select:focus {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-subtle);
+    outline: none;
+}
+
 /* ─── Main ─── */
 .main {
     max-width: 960px;

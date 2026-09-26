@@ -19,11 +19,11 @@ class Settings(BaseSettings):
 
     # ─── Gemini ───
     gemini_api_key: Optional[str] = None
-    gemini_model: str = "gemini-flash-latest"
+    gemini_model: str = "gemini-3.5-flash-lite"
 
     # ─── Threat Intel APIs (P0) ───
     safe_browsing_api_key: Optional[str] = None
-    phishtank_api_key: Optional[str] = None
+    phishtank_api_key: Optional[str] = "public"
 
     # ─── Threat Intel APIs (P2 optional) ───
     abuseipdb_api_key: Optional[str] = None

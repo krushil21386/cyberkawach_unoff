@@ -23,30 +23,54 @@ from backend.models.evidence import (
 
 _FRAUD_CATEGORIES: list[tuple[str, list[tuple[re.Pattern, float]]]] = [
     ("banking", [
-        (re.compile(r'\b(?:bank|account|debit|credit|atm|card|cvv|pin|otp|ifsc|neft|rtgs|imps|upi)\b', re.I), 0.3),
+        (re.compile(r'\b(?:bank|account|debit|credit|atm|card|cvv|pin|otp|ifsc|neft|rtgs|imps|upi|khata)\b', re.I), 0.3),
         (re.compile(r'\b(?:sbi|hdfc|icici|axis|kotak|pnb|bob|canara|union|idbi|rbi)\b', re.I), 0.4),
-        (re.compile(r'\b(?:block(?:ed)?|suspend(?:ed)?|frozen|deactivat(?:ed?|ing)|limit(?:ed)?)\b', re.I), 0.3),
-        (re.compile(r'\b(?:kyc|pan|aadhaar|aadhar|verify|verification|update)\b', re.I), 0.25),
+        (re.compile(r'\b(?:block(?:ed)?|suspend(?:ed)?|frozen|deactivat(?:ed?|ing)|limit(?:ed)?|band\s*ho\s*jayega)\b', re.I), 0.3),
+        (re.compile(r'\b(?:kyc|pan|aadhaar|aadhar|verify|verification|update|turant\s*update)\b', re.I), 0.25),
+        # Indic native scripts: Hindi, Gujarati, Tamil
+        (re.compile(r'(?:खाता|बैंक|ब्लॉक|केवाईसी|आधार|पैन|ओटीपी|पैसे|खाતું|બેંક|બ્લોક|કેવાયસી|આધાર|ઓટીપી|வங்கி|கணக்கு|முடக்கப்பட்டது|கேஒய்சி|புதுப்பிக்கவும்)', re.U), 0.35),
+    ]),
+    ("electricity", [
+        (re.compile(r'\b(?:electricity|power|bijli|bijlee|discom|light|meter|bill)\b', re.I), 0.4),
+        (re.compile(r'\b(?:disconnect(?:ed)?|disconnection|cut(?:off)?|kat\s*jayega|line\s*cut)\b', re.I), 0.45),
+        (re.compile(r'\b(?:bses|mseb|tneb|uppcl|wbsedcl|cesc|dhbvn|uhbvn|sdo\s*officer|officer\s*number)\b', re.I), 0.4),
+        (re.compile(r'\b(?:tonight|9:30|aaj\s*raat|bill\s*not\s*updated|previous\s*month)\b', re.I), 0.35),
+        # Indic native scripts: Hindi, Gujarati, Tamil
+        (re.compile(r'(?:बिजली|पावर\s*कट|कनेक्शन\s*कट|बिल|मीटर|अधिकारी|વીજળી|કનેક્શન\s*કપાઈ|બિલ|મીટર|લાઈટ\s*કટ|மின்சாரம்|மின்கட்டணம்|துண்டிக்கப்படும்)', re.U), 0.45),
+    ]),
+    ("digital_arrest", [
+        (re.compile(r'\b(?:digital\s*arrest|narcotics|contraband|drugs|passport|customs\s*seizure)\b', re.I), 0.5),
+        (re.compile(r'\b(?:cbi|ed|enforcement\s*directorate|cyber\s*crime\s*police|crime\s*branch|mumbai\s*police)\b', re.I), 0.4),
+        (re.compile(r'\b(?:money\s*laundering|terror\s*fund|arrest\s*warrant|court\s*summons?|fir\s*registered)\b', re.I), 0.45),
+        (re.compile(r'\b(?:skype\s*call|video\s*call|stay\s*on\s*call|do\s*not\s*disconnect)\b', re.I), 0.4),
+        # Indic native scripts: Hindi, Gujarati, Tamil
+        (re.compile(r'(?:डिजिटल\s*अरेस्ट|पुलिस|सीबीआई|वारंट|गिरफ्तारी|अदालत|ડિજિટલ\s*ધરપકડ|પોલીસ|વોરંટ|સીબીઆઈ|டிஜிட்டல்\s*கைது|காவல்துறை|வாரண்ட்)', re.U), 0.5),
     ]),
     ("courier", [
-        (re.compile(r'\b(?:parcel|package|delivery|courier|shipment|dispatch|customs|tracking)\b', re.I), 0.3),
-        (re.compile(r'\b(?:delhivery|bluedart|dtdc|fedex|dhl|india\s*post|ecom\s*express|ekart)\b', re.I), 0.4),
-        (re.compile(r'\b(?:address|reschedule|failed\s*delivery|undelivered|return)\b', re.I), 0.2),
+        (re.compile(r'\b(?:parcel|package|delivery|courier|shipment|dispatch|customs|tracking)\b', re.I), 0.35),
+        (re.compile(r'\b(?:delhivery|bluedart|dtdc|fedex|dhl|india\s*post|ecom\s*express|ekart|speed\s*post)\b', re.I), 0.4),
+        (re.compile(r'\b(?:address|reschedule|failed\s*delivery|undelivered|return|hold|detained|wrong\s*address)\b', re.I), 0.35),
+        (re.compile(r'\b(?:fee|charge|duty|pay|tax|fine|rs\.?|₹|customs\s*fee)\b', re.I), 0.35),
+        (re.compile(r'(?:पार्सल|डिलीवरी|डाक|કુરિયર|ટપાલ|பார்சல்|டெலிவரி)', re.U), 0.35),
     ]),
     ("government", [
         (re.compile(r'\b(?:government|govt|ministry|income\s*tax|gst|epfo|aadhaar|digilocker)\b', re.I), 0.35),
         (re.compile(r'\b(?:refund|subsidy|scheme|yojana|pension|challan|notice|summon)\b', re.I), 0.3),
         (re.compile(r'\b(?:police|cyber\s*cell|legal|court|arrest|warrant|fir)\b', re.I), 0.35),
+        (re.compile(r'(?:सरकार|योजना|पेंशन|आयकर|ચલાણ|அரசாங்கம்)', re.U), 0.35),
     ]),
     ("lottery_prize", [
-        (re.compile(r'\b(?:lottery|prize|winner|won|congratulat|lucky|jackpot|reward)\b', re.I), 0.5),
+        (re.compile(r'\b(?:lottery|prize|winner|won|congratulat|lucky|jackpot|reward|kbc)\b', re.I), 0.5),
         (re.compile(r'\b(?:claim|collect|processing\s*fee|registration\s*fee)\b', re.I), 0.3),
         (re.compile(r'\b(?:lakh|crore|million|billion|\$|₹|rs\.?|rupee)\b', re.I), 0.2),
+        # Indic native scripts: Hindi, Gujarati, Tamil
+        (re.compile(r'(?:लॉटरी|इनाम|विजेता|करोड़|लाख|पुरस्कार|લોટરી|ઇનામ|વિજેતા|કરોડ|લાખ|லாட்டரி|பரிசு|வென்றீர்கள்)', re.U), 0.45),
     ]),
     ("job_offer", [
         (re.compile(r'\b(?:job|hiring|vacancy|recruit|salary|earn|income|work\s*from\s*home)\b', re.I), 0.3),
         (re.compile(r'\b(?:part[\s-]?time|full[\s-]?time|daily\s*(?:earn|income|pay)|per\s*(?:day|hour))\b', re.I), 0.35),
         (re.compile(r'\b(?:registration|joining)\s*(?:fee|charge|amount)\b', re.I), 0.4),
+        (re.compile(r'(?:नौकरी|वेतन|रोजगार|નોકરી|வேலைவாய்ப்பு)', re.U), 0.35),
     ]),
     ("investment", [
         (re.compile(r'\b(?:invest|trading|stock|crypto|bitcoin|forex|mutual\s*fund)\b', re.I), 0.3),
@@ -63,11 +87,13 @@ _FRAUD_CATEGORIES: list[tuple[str, list[tuple[re.Pattern, float]]]] = [
 # ─── Urgency/pressure signals ───
 
 _URGENCY_PATTERNS: list[tuple[re.Pattern, str]] = [
-    (re.compile(r'\b(?:immediate(?:ly)?|urgent(?:ly)?|right\s*now|asap|at\s*once)\b', re.I), "urgency_pressure"),
-    (re.compile(r'\b(?:within\s*\d+\s*(?:hour|minute|hr|min)s?|last\s*chance|final\s*warning)\b', re.I), "time_pressure"),
-    (re.compile(r'\b(?:act\s*now|don\'?t\s*delay|hurry|limited\s*(?:time|offer|period))\b', re.I), "time_pressure"),
-    (re.compile(r'\b(?:expire|expir(?:ed|ing|es)|deadline)\b', re.I), "expiry_pressure"),
-    (re.compile(r'\b(?:or\s*else|otherwise|fail(?:ure)?|consequence|penalty|fine|legal\s*action)\b', re.I), "threat_pressure"),
+    (re.compile(r'\b(?:immediate(?:ly)?|urgent(?:ly)?|right\s*now|asap|at\s*once|turant|jaldi)\b', re.I), "urgency_pressure"),
+    (re.compile(r'\b(?:within\s*\d+\s*(?:hour|minute|hr|min)s?|last\s*chance|final\s*warning|aaj\s*raat)\b', re.I), "time_pressure"),
+    (re.compile(r'\b(?:act\s*now|don\'?t\s*delay|hurry|limited\s*(?:time|offer|period)|sampark\s*kare)\b', re.I), "time_pressure"),
+    (re.compile(r'\b(?:expire|expir(?:ed|ing|es)|deadline|connection\s*kat)\b', re.I), "expiry_pressure"),
+    (re.compile(r'\b(?:or\s*else|otherwise|fail(?:ure)?|consequence|penalty|fine|legal\s*action|police\s*case)\b', re.I), "threat_pressure"),
+    # Indic urgency patterns
+    (re.compile(r'(?:तुरंत|जल्दी|आज\s*रात|अंतिम\s*चेतावनी|संपर्क\s*करें|ताત્કાલિક|જલ્દી|આજે\s*રાત્રે|ચેતવણી|સંપર્ક\s*કરો|உடனடியாக|இன்று\s*இரவு|எச்சரிக்கை)', re.U), "urgency_pressure"),
 ]
 
 # ─── Credential request signals ───
@@ -77,6 +103,8 @@ _CREDENTIAL_PATTERNS: list[tuple[re.Pattern, str]] = [
     (re.compile(r'\b(?:click|tap|open)\s*(?:this|the|below|here|on)\s*(?:link|url|button)\b', re.I), "click_bait"),
     (re.compile(r'\b(?:login|log\s*in|sign\s*in|verify)\s*(?:here|now|to|at|using)\b', re.I), "login_redirect"),
     (re.compile(r'\b(?:scan|use)\s*(?:this|the|below)?\s*(?:qr|barcode)\b', re.I), "qr_redirect"),
+    # Indic credential request patterns
+    (re.compile(r'(?:ओटीपी\s*दर्ज|पिन\s*साझा|पासवर्ड|क्लिक\s*करें|ઓટીપી\s*દાખલ|પિન\s*શેર|ક્લિક\s*કરો|ஓடிபி|கடவுச்சொல்)', re.U), "credential_request"),
 ]
 
 # ─── Financial action signals ───

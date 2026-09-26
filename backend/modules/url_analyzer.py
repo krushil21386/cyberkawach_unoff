@@ -52,8 +52,10 @@ _SUSPICIOUS_PATH_WORDS = frozenset({
     'login', 'signin', 'sign-in', 'secure', 'verify', 'update',
     'confirm', 'account', 'banking', 'password', 'credential',
     'authenticate', 'validation', 'suspension', 'reactivate',
-    'unlock', 'restore', 'wallet', 'payment',
+    'unlock', 'restore', 'wallet', 'payment', 'customs', 'delivery',
+    'kyc', 'support', 'gift', 'bonus', 'claim',
 })
+
 
 
 def _has_punycode(domain: str) -> bool:
@@ -149,6 +151,21 @@ def _analyze_single_url(url_signal: URLSignal) -> tuple[URLSignal, list[Evidence
             raw_data={"url": url, "domain": domain, "length": len(domain), "signal": "long_domain"},
         ))
 
+    # ─── Suspicious domain keywords ───
+    domain_lower = domain.lower()
+    # Check parts of domain excluding the TLD
+    domain_body = domain_lower.rsplit('.', 1)[0] if '.' in domain_lower else domain_lower
+    found_domain_words = [w for w in _SUSPICIOUS_PATH_WORDS if w in domain_body]
+    if found_domain_words:
+        signals.append('suspicious_domain_keyword')
+        evidence_items.append(EvidenceItem(
+            type=EvidenceType.URL_ANALYSIS,
+            source="url_analyzer",
+            description=f"Deceptive keywords in domain name: {', '.join(found_domain_words)}",
+            confidence=0.50,
+            raw_data={"url": url, "domain": domain, "keywords": found_domain_words, "signal": "suspicious_domain_keyword"},
+        ))
+
     # ─── Suspicious path keywords ───
     path = unquote(parsed.path).lower()
     found_path_words = [w for w in _SUSPICIOUS_PATH_WORDS if w in path]
@@ -180,10 +197,24 @@ def _analyze_single_url(url_signal: URLSignal) -> tuple[URLSignal, list[Evidence
     # ─── HTTP (not HTTPS) ───
     if parsed.scheme == 'http':
         signals.append('no_https')
+        evidence_items.append(EvidenceItem(
+            type=EvidenceType.URL_ANALYSIS,
+            source="url_analyzer",
+            description=f"Insecure unencrypted HTTP connection: {domain}",
+            confidence=0.35,
+            raw_data={"url": url, "domain": domain, "signal": "no_https"},
+        ))
 
     # ─── URL shortener ───
     if domain in _SHORTENERS:
         signals.append('shortened_url')
+        evidence_items.append(EvidenceItem(
+            type=EvidenceType.URL_ANALYSIS,
+            source="url_analyzer",
+            description=f"URL shortener hides true destination domain: {domain}",
+            confidence=0.45,
+            raw_data={"url": url, "domain": domain, "signal": "shortened_url"},
+        ))
 
     url_signal.signals = signals
     return url_signal, evidence_items

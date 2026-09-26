@@ -20,7 +20,7 @@ _PHISHTANK_URL = "https://checkurl.phishtank.com/checkurl/"
 async def check_phishtank(urls: list[str]) -> list[ThreatIntelResult]:
     """
     Query PhishTank for each URL. Returns one ThreatIntelResult per URL.
-    If API key is not configured, returns results with error field set.
+    Works with or without an API key (uses public checkurl with User-Agent).
     """
     settings = get_settings()
     results = []
@@ -38,13 +38,16 @@ async def check_phishtank(urls: list[str]) -> list[ThreatIntelResult]:
     async with httpx.AsyncClient(timeout=10.0) as client:
         for url in urls:
             try:
+                data_payload: dict[str, str] = {
+                    "url": url,
+                    "format": "json",
+                }
+                if settings.phishtank_api_key and settings.phishtank_api_key != "public":
+                    data_payload["app_key"] = settings.phishtank_api_key
+
                 resp = await client.post(
                     _PHISHTANK_URL,
-                    data={
-                        "url": url,
-                        "format": "json",
-                        "app_key": settings.phishtank_api_key,
-                    },
+                    data=data_payload,
                     headers={"User-Agent": "phishtank/cyber-fraud-guardian"},
                 )
                 resp.raise_for_status()
@@ -52,18 +55,26 @@ async def check_phishtank(urls: list[str]) -> list[ThreatIntelResult]:
 
                 result_data = data.get("results", {})
                 in_database = result_data.get("in_database", False)
-                is_phish = result_data.get("valid", False) if in_database else False
+                is_valid = result_data.get("valid", False)
+                phish_id = result_data.get("phish_id", "N/A")
+
+                # If URL is in PhishTank's database, it is a known phishing threat
+                if in_database:
+                    if is_valid:
+                        match = True
+                        details = f"Verified phishing site on PhishTank (ID: {phish_id})"
+                    else:
+                        match = True
+                        details = f"Reported phishing site listed in PhishTank (ID: {phish_id}, verification in progress)"
+                else:
+                    match = False
+                    details = "Not in PhishTank database"
 
                 results.append(ThreatIntelResult(
                     source="phishtank",
-                    match=is_phish,
+                    match=match,
                     lookup_url=url,
-                    details=(
-                        f"Verified phish (ID: {result_data.get('phish_id', 'N/A')})"
-                        if is_phish
-                        else "Not in PhishTank database" if not in_database
-                        else "In database but not verified as phish"
-                    ),
+                    details=details,
                 ))
 
             except httpx.TimeoutException:
